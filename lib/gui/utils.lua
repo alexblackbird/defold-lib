@@ -393,23 +393,21 @@ function align_icon_and_text(text_node, root_node, icon_node, alignment)
 	gui.set_position(root_node, vmath.vector3(x_pos, pos.y, 0))
 end
 
-function clone_tree(self, root, name)
-	local nodes = gui.clone_tree(gui.get_node(root.."/"..name))
+function clone_tree(self, template_id, parent_id)
+    local nodes = gui.clone_tree(gui.get_node(template_id))
+    local node_root = nodes[template_id]
+    
+    if self.instances then
+        self.instances["reward1"] = nodes
+    end
 
-	-- Возвращаем функцию, которая будет обращаться к нужным нодам
-	local function get_node(path)
-		return nodes[hash(root.."/"..path)]
+    gui.set_enabled(node_root, true)
+
+	if parent_id then
+		gui.set_parent(node_root, gui.get_node(parent_id))
 	end
 
-	return get_node
-end
-
-function create_panel(self, root, name, height)
-	local nodes = clone_tree(self, root, name)
-	gui.set_position(nodes(name), vmath.vector3(0, self.content_y - height/2, 0))
-	self.content_y = self.content_y - height
-
-	return nodes
+    return nodes, node_root
 end
 
 --------------------------------------------------------------------
