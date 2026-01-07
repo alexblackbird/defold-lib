@@ -1,6 +1,23 @@
-local shop = require "main.shop.modules.shop"
-
 local loot_manager = {}
+
+function loot_manager.format_number(number)
+	local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
+
+	-- reverse the integer part of the number
+	int = int:reverse()
+
+	-- add the thousands separator
+	int = int:gsub("(%d%d%d)", "%1 ")
+
+	-- reverse the integer part back
+	int = int:reverse()
+
+	-- remove any leading thousands separator
+	int = int:gsub("^ ", "")
+
+	-- construct and return the formatted number
+	return minus .. int .. fraction
+end
 
 -- быстрый запуск функции которая вызовет лут в нужном контексте и заранее добавит средства чтобы не блоы момента когда у пользователя нет денег
 function loot_manager.loot(params)
@@ -150,9 +167,9 @@ function loot_manager.animate_resource_counter(node_name, type, value)
 	update_timer = timer.delay(0.05, true, function ()
 		old_value = old_value + step
 		
-		gui.set_text(gui.get_node(node_name), shop.format_number(math.floor(old_value)))
+		gui.set_text(gui.get_node(node_name), loot_manager.format_number(math.floor(old_value)))
 		if db[type] == old_value or db[type] < old_value + step then
-			gui.set_text(gui.get_node(node_name), shop.format_number(db[type]))
+			gui.set_text(gui.get_node(node_name), loot_manager.format_number(db[type]))
 			timer.cancel(update_timer)
 		end
 	end)
