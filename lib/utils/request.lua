@@ -18,8 +18,10 @@ function M.new(script, params, successCb, errorCb, loader, method)
 
   -- формируем ссылку
   if sys.get_engine_info().is_debug then
-    self.SERVER_PATCH = sys.get_config("app.dev_server_url") 
-  else 
+    print("is dev")
+    self.SERVER_PATCH = sys.get_config("app.dev_server_url")
+  else
+    print("is prod")
     self.SERVER_PATCH = sys.get_config("app.prod_server_url")
   end
 
