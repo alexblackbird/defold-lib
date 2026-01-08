@@ -4,10 +4,10 @@
 --- Использование:
 ---
 --- 1. Инициализация (loader.script):
----    В секцию с импортом
----    loot_module = require "lib.modules.loot_module"
---- 
----    В секцию с инициализацией
+---    -- В секцию с импортами
+---    loot_module = require "lib.modules.loot_module.loot_module"
+---
+---    -- В секцию инициализации
 ---    loot_module.init({
 ---        center_offset = {x = 0, y = -420},
 ---        default_place = "coins_panel",
@@ -22,18 +22,16 @@
 ---            }
 ---        }
 ---    })
---- 2. Добавить в menu (или где будет начисляться лут - есть панели куда лут может улетать)
---- 
---- 3. Регистрация handler в menu.gui_script или где будет начисляться лут:
----    loot_module.set_handler(function(data)
----        loot_module.create(self, data)
----    end)
 ---
---- 4. Вызов:
+--- 2. Обработка сообщения в menu.gui_script (где есть панели ресурсов):
+---    elseif message_id == hash("loot_module") then
+---        loot_module.create(self, message)
+---
+--- 3. Вызов из любого места:
 ---    loot_module.drop({type = "coins", count = 100})
 ---    loot_module.drop({type = "coins", count = 100, x = 500, y = 800})
 ---
---- 5. Авторегистрация любого спрайта:
+--- 4. Авторегистрация любого спрайта:
 ---    loot_module.drop({type = "energy", count = 50})  -- найдёт спрайт "energy"
 ---
 
@@ -59,7 +57,7 @@ M.DEFAULTS = {
     sound_prefix = "loader:/sound#",
     
     -- Настройки партиклов
-    particle_name = "loot_trail",
+    particle_name = "loot_module_trail",
     
     -- Настройки слоя
     layer_name = "front",
@@ -334,13 +332,15 @@ function M.drop(params)
         amplitude.track("earn", {type = item_type, value = count})
     end
     
-    -- Вызываем handler
-    if M._handler then
-        M._handler(drop_params)
-    elseif monarch and monarch.post then
+    -- ВАЖНО: отправляем через monarch.post чтобы GUI операции
+    -- выполнялись в контексте menu, где есть coins_panel и другие панели
+    if monarch and monarch.post then
         monarch.post('menu', 'loot_module', drop_params)
+    elseif M._handler then
+        -- Fallback на прямой вызов handler (менее надёжно)
+        M._handler(drop_params)
     else
-        print("[loot_module] WARNING: no handler registered and monarch not available")
+        print("[loot_module] WARNING: monarch not available and no handler registered")
     end
 end
 
