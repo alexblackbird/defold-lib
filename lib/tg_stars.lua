@@ -4,8 +4,6 @@ local offers = require "lib.offers"
 -- КОНСТАНТЫ И КОНФИГУРАЦИЯ
 
 local STAR_TO_USD = 0.013  -- 1 star = 0.013 USD
-local CENTER_X = 1080 / 2
-local CENTER_Y = 1920 / 2 - 420
 
 -- Типы продуктов
 local PRODUCT_TYPES = {
@@ -18,7 +16,9 @@ local PRODUCT_TYPES = {
 -- Показать визуальный эффект получения монет
 local function show_coins_loot(coins_count)
     if coins_count and coins_count > 0 then
-        loot_manager.loot({ x = CENTER_X, y = CENTER_Y, count = coins_count, type = "coins"})
+        loot_module.drop({
+            count = coins_count, type = "coins"
+        })
     end
 end
 

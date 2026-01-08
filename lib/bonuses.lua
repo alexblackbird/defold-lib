@@ -1,5 +1,5 @@
 local bonuses = {}
-local loot_manager = require "lib.gui.loot_manager"
+local loot_module = require "lib.gui.loot_module.loot_module"
 
 -- Функция для проверки валидности значения из веб-интерфейса
 local function is_valid_value(value)
@@ -49,15 +49,13 @@ function bonuses.claim_bonus(bonus_id, success_callback, error_callback)
 		print("Бонус успешно получен:")
 		pprint(response)
 
-		-- Если в ответе есть награда - выдаем через loot_manager
+		-- Если в ответе есть награда - выдаем через loot_module
 		if response.reward and response.reward.type and response.reward.value then
 			local reward = response.reward
 			print(string.format("Выдаем награду: %s x%d", reward.type, reward.value))
 
 			-- Выдаем лут с анимацией в центр экрана
-			loot_manager.loot({
-				x = 1080/2, 
-				y = 1920/2 - 420, 
+			loot_module.drop({
 				count = reward.value, 
 				type = reward.type
 			})
