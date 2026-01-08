@@ -1,5 +1,5 @@
 local bonuses = {}
-local loot_module = require "lib.loot_module.loot_module"
+local loot_module = require "lib.modules.loot_module.loot_module"
 
 -- Функция для проверки валидности значения из веб-интерфейса
 local function is_valid_value(value)
