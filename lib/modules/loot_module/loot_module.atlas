@@ -1,0 +1,4 @@
+images {
+  image: "/lib/modules/loot_module/images/loot_star.png"
+}
+extrude_borders: 2
