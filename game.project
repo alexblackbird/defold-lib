@@ -23,5 +23,5 @@ scale_mode = stretch
 title = Defold Lib
 
 [library]
-include_dirs = lib
+include_dirs = modules
 
