@@ -2,7 +2,7 @@ emitters {
   mode: PLAY_MODE_LOOP
   duration: 1.0
   space: EMISSION_SPACE_WORLD
-  tile_source: "/lib/modules/loot_module/loot_module.atlas"
+  tile_source: "/modules/loot_module/loot_module.atlas"
   animation: "loot_star"
   material: "/builtins/materials/particlefx.material"
   blend_mode: BLEND_MODE_ADD
