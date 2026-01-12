@@ -1,8 +1,12 @@
 local account = {}
 
--- Универсальный модуль аккаунта со встроенными провайдерами
+-- Универсальный модуль аккаунта с поддержкой Telegram и PlayDeck авторизации
 -- Использование:
---   account.init({ telegram = true, fingerprint = true, acquisition = true, on_success = fn, on_error = fn })
+--   account.init({ 
+--       telegram = true, fingerprint = true, acquisition = true,
+--       playdeck = true,  -- включить PlayDeck авторизацию
+--       on_success = fn, on_error = fn 
+--   })
 --   account.login()
 
 local config = {
@@ -10,7 +14,9 @@ local config = {
 	on_success = function(data) end,
 	on_error = function(error) end,
 	endpoint = 'account',
-	request_fn = nil
+	request_fn = nil,
+	playdeck_enabled = false,
+	playdeck_timeout = 1.0,  -- таймаут ожидания PlayDeck (сек)
 }
 
 -- Встроенные провайдеры
@@ -59,6 +65,10 @@ function account.init(params)
 	if params.fingerprint then config.providers.fingerprint = builtin_providers.fingerprint end
 	if params.acquisition then config.providers.acquisition = builtin_providers.acquisition end
 	
+	-- PlayDeck
+	if params.playdeck then config.playdeck_enabled = true end
+	if params.playdeck_timeout then config.playdeck_timeout = params.playdeck_timeout end
+	
 	-- Коллбэки
 	if params.on_success then config.on_success = params.on_success end
 	if params.on_error then config.on_error = params.on_error end
@@ -83,15 +93,7 @@ local function collect_params()
 	return params
 end
 
-function account.login(custom_params)
-	local params = collect_params()
-	
-	if custom_params then
-		for k, v in pairs(custom_params) do
-			params[k] = v
-		end
-	end
-	
+local function do_request(params)
 	local req_fn = config.request_fn or request
 	if not req_fn then
 		error("account: request function not defined")
@@ -103,6 +105,92 @@ function account.login(custom_params)
 	end, function(err)
 		config.on_error(err, params)
 	end, false)
+end
+
+function account.login(custom_params)
+	local params = collect_params()
+	params.method = "login"  -- API требует этот параметр
+	
+	if custom_params then
+		for k, v in pairs(custom_params) do
+			params[k] = v
+		end
+	end
+	
+	-- Если PlayDeck не включен или не HTML5 — простая Telegram авторизация
+	if not config.playdeck_enabled or sys_info.system_name ~= "HTML5" then
+		do_request(params)
+		return
+	end
+	
+	-- PlayDeck авторизация с fallback на Telegram
+	local auth_completed = false
+	local playdeck_auth_started = false
+	
+	local function on_auth_success(data)
+		if auth_completed then return end
+		auth_completed = true
+		config.on_success(data, params)
+	end
+	
+	local function do_telegram_auth()
+		if auth_completed or playdeck_auth_started then return end
+		do_request(params)
+	end
+	
+	local function do_playdeck_auth()
+		if auth_completed then return end
+		if not playdeck or not playdeck.token or not playdeck.user_profile then return end
+		
+		playdeck_auth_started = true
+		params.playdeck_token = playdeck.token.token
+		params.playdeck_profile = json.encode(playdeck.user_profile)
+		
+		local req_fn = config.request_fn or request
+		req_fn(config.endpoint, params, on_auth_success, function(err)
+			config.on_error(err, params)
+		end, false)
+	end
+	
+	-- Проверяем доступность PlayDeck
+	if not playdeck or not playdeck.is_available then
+		do_telegram_auth()
+		return
+	end
+	
+	-- Если уже есть токен и профиль — сразу используем
+	if playdeck.token and playdeck.user_profile then
+		do_playdeck_auth()
+		return
+	end
+	
+	-- Пытаемся получить токен от PlayDeck
+	playdeck.get_token(function(token_response)
+		if auth_completed or playdeck_auth_started then return end
+		
+		if not token_response or not token_response.token then
+			do_telegram_auth()
+			return
+		end
+		
+		playdeck.get_user_profile(function(profile)
+			if auth_completed or playdeck_auth_started then return end
+			
+			if not profile then
+				do_telegram_auth()
+				return
+			end
+			
+			do_playdeck_auth()
+		end)
+	end)
+	
+	-- Таймаут — если PlayDeck не ответил, используем Telegram
+	timer.delay(config.playdeck_timeout, false, function()
+		if not auth_completed and not playdeck_auth_started then
+			do_telegram_auth()
+		end
+	end)
 end
 
 function account.create(params, callback)
