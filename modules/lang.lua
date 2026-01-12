@@ -15,6 +15,7 @@ local lang_configs = nil
 local config = {
 	translations_path = "/configs/languages.json",
 	arabic_converter = arabic_ok and arabic.convert or nil,
+	use_font_variants = false,  -- true для font_regular/font_bold, false для font
 }
 
 -- Стандартный пул языков (можно переопределить)
@@ -40,6 +41,7 @@ function lang.init(params)
 	if params.translations_path then config.translations_path = params.translations_path end
 	if params.arabic_converter then config.arabic_converter = params.arabic_converter end
 	if params.russian_group then lang.russian_group = params.russian_group end
+	if params.use_font_variants ~= nil then config.use_font_variants = params.use_font_variants end
 	
 	-- Загрузка переводов
 	local resource = sys.load_resource(config.translations_path)
@@ -123,8 +125,35 @@ end
 local scaleTable = {}
 
 function lang.get_font_name(node, font)
-	-- Просто возвращаем font из pool для текущего языка
-	return font or lang.font
+	local font_name = font or lang.font
+	
+	-- Если не используем варианты шрифтов (font_regular/font_bold) - просто возвращаем базовое имя
+	if not config.use_font_variants or not node then
+		return font_name
+	end
+	
+	-- Если используем варианты - добавляем суффикс _regular или _bold
+	local current_font = gui.get_font(node)
+	
+	if font_name == "font" then
+		if current_font == hash("font_regular") then
+			return "font_regular"
+		else
+			return "font_bold"
+		end
+	elseif font_name == "font_ar" then
+		if current_font == hash("font_regular") or current_font == hash("font_ar_regular") then
+			return "font_ar_regular"
+		else
+			return "font_ar_bold"
+		end
+	elseif font_name == "font_ko" then
+		return "font_ko_regular"
+	elseif font_name == "font_ja" then
+		return "font_ja_regular"
+	end
+	
+	return font_name
 end
 
 function lang.set(nodeName, textKey, params)
