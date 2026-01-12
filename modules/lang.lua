@@ -16,6 +16,7 @@ local config = {
 	translations_path = "/configs/languages.json",
 	arabic_converter = arabic_ok and arabic.convert or nil,
 	use_font_variants = false,  -- true для font_regular/font_bold, false для font
+	switch_lang_action_id = hash("key_lshift"), -- кнопка переключения языка (debug)
 }
 
 -- Стандартный пул языков (можно переопределить)
@@ -42,6 +43,7 @@ function lang.init(params)
 	if params.arabic_converter then config.arabic_converter = params.arabic_converter end
 	if params.russian_group then lang.russian_group = params.russian_group end
 	if params.use_font_variants ~= nil then config.use_font_variants = params.use_font_variants end
+	if params.switch_lang_action_id then config.switch_lang_action_id = hash(params.switch_lang_action_id) end
 	
 	-- Загрузка переводов
 	local resource = sys.load_resource(config.translations_path)
@@ -210,6 +212,15 @@ function lang.convert_to_arabic_style_for_right(node, pivot)
 		gui.set_pivot(node, pivot or gui.PIVOT_E)
 		local pos = gui.get_position(node)
 		gui.set_position(node, vmath.vector3(-pos.x, pos.y, 0))
+	end
+end
+
+function lang.on_input(self, action_id, action)
+	if action_id == config.switch_lang_action_id and action.released and sys.get_engine_info().is_debug then
+		lang.next_lang()
+		if lb then
+			lb.set("language", lang.language)
+		end
 	end
 end
 
