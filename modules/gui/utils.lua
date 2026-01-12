@@ -472,3 +472,8 @@ function clone_tree(self, template_id, parent_id)
 
     return nodes, node_root
 end
+
+-- Ищет {count} и заменяет на count
+function format_count(template, count)
+	return template:gsub("{count}", tostring(count))
+end
