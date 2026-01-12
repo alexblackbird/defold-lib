@@ -11,6 +11,5 @@ function network.is_connected()
 	end
 	return status
 end
-	
 
 return network
