@@ -78,10 +78,6 @@ function popup.open_next(delay)
 	if not delay then
 		delay = 0
 	end
-	
-	timer.delay(delay, false, function (self)
-
-	end)
 
 	-- если есть очередь - то запускаем поледний добавленный о очередь
 	if next(popup.pool) then
