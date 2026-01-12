@@ -10,6 +10,8 @@
     - sound (опционально, для звуков)
 ]]
 
+local M = {}
+
 -- Конфигурация
 local config = {
     default_sound = "menu:/sound#click",
@@ -18,7 +20,7 @@ local config = {
     animation_duration = 0.1 -- длительность анимации
 }
 
-function touch(self, action, node_string, callback, without_animation, sound_file)
+function M.touch(self, action, node_string, callback, without_animation, sound_file)
     local node = (type(node_string) == 'string' and gui.get_node(node_string) or node_string)
 
     if not self.active_button then
@@ -78,7 +80,9 @@ function touch(self, action, node_string, callback, without_animation, sound_fil
                     table.remove(self.active_button, search.id)
                 end)
             end
-            if taptic and taptic.run then
+            if taptic and taptic.use then
+                taptic.use(taptic.IMPACT_LIGHT)
+            elseif taptic and taptic.run then
                 taptic.run(taptic.IMPACT_LIGHT)
             end
             search.callback()
@@ -95,7 +99,7 @@ function touch(self, action, node_string, callback, without_animation, sound_fil
     end
 end
 
-function touch_deactivate(self, without_animation)
+function M.touch_deactivate(self, without_animation)
     if self.active_button then
         for i, v in ipairs(self.active_button) do
             if not without_animation then
@@ -106,23 +110,24 @@ function touch_deactivate(self, without_animation)
     end
 end
 
+function M.init(params)
+    params = params or {}
+    if params.enable_sound ~= nil then
+            config.enable_sound = params.enable_sound
+    end
+    if params.default_sound then
+            config.default_sound = params.default_sound
+    end
+    if params.scale_factor then
+            config.scale_factor = params.scale_factor
+    end
+    if params.animation_duration then
+            config.animation_duration = params.animation_duration
+    end
+
+    -- Export legacy globals
+    _G.touch = M.touch
+    _G.touch_deactivate = M.touch_deactivate
 end
 
--- Публичный API для настройки
-return {
-    init = function(params)
-        params = params or {}
-        if params.enable_sound ~= nil then
-             config.enable_sound = params.enable_sound
-        end
-        if params.default_sound then
-             config.default_sound = params.default_sound
-        end
-        if params.scale_factor then
-             config.scale_factor = params.scale_factor
-        end
-        if params.animation_duration then
-             config.animation_duration = params.animation_duration
-        end
-    end
-}
+return M
