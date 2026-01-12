@@ -213,7 +213,7 @@ function no_animation(node)
 	end)
 end
 
-local animateLevitationEffectTable = {}
+animateLevitationEffectTable = {}
 function animateLevitaitonEffect(nodeName)
 	local node
 
