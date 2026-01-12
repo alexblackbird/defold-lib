@@ -48,7 +48,7 @@ function M.create(id, parent_id, template_id, data, customizer, opts)
     local total_content_height = 0
     if has_data then
         total_content_height = #data * table_height + math.max(0, (#data-1)) * spacing
-        print(total_content_height)
+
 
 
     elseif placeholder_node_id and placeholder_node_id ~= "" then

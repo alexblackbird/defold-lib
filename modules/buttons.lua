@@ -33,4 +33,8 @@ function M.clear()
     M._handlers = {}
 end
 
+function M.init()
+    M.clear()
+end
+
 return M 
