@@ -1,125 +1,115 @@
 local account = {}
 
--- Модуль для работы с аккаунтами пользователей
--- Поддерживает получение данных кампании привлечения (acquisition data) и рефералов
--- Данные получаются из Telegram Mini App через HTML5 интерфейс
+-- Универсальный модуль аккаунта со встроенными провайдерами
+-- Использование:
+--   account.init({ telegram = true, fingerprint = true, acquisition = true, on_success = fn, on_error = fn })
+--   account.login()
 
-local function error_callback(jd)
-	msg.post('/loader#gui', 'hide_background')
-	if jd.error then
-		popup.show("error", {}, {code = jd.error})
-	else
-		-- Неизвестная ошибка
-		popup.show("error", {}, {code = "Unkhnown"})
-	end
-end
+local config = {
+	providers = {},
+	on_success = function(data) end,
+	on_error = function(error) end,
+	endpoint = 'account',
+	request_fn = nil
+}
 
-function account.login()
-	local params = {}
-
-	-- добавляем рефферала
-	if sys_info.system_name == "HTML5" then
+-- Встроенные провайдеры
+local builtin_providers = {
+	telegram = function()
+		if telegram and telegram.params then
+			return { init_data = json.encode(telegram.params) }
+		end
+		return {}
+	end,
+	
+	fingerprint = function()
+		if lb then
+			return { device_fingerprint = lb.get("device_fingerprint", "") }
+		end
+		return {}
+	end,
+	
+	acquisition = function()
+		if sys_info.system_name ~= "HTML5" then return {} end
+		local params = {}
+		
 		local referral_id = html5.run("getRefferal()")
-		if referral_id then
+		if referral_id and referral_id ~= "" then
 			params.referral_id = referral_id
 		end
-
-		-- добавляем данные кампании привлечения
-		local acquisition_data_json = html5.run("getAcquisitionData()")
-		if acquisition_data_json and type(acquisition_data_json) == "string" then
-			local success, acquisition_data = pcall(json.decode, acquisition_data_json)
-			if success and acquisition_data and type(acquisition_data) == "table" then
-				-- Проверяем и добавляем каждое поле, если оно существует
-				if acquisition_data.publisher_id then
-					params.publisher_id = acquisition_data.publisher_id
+		
+		local ad_json = html5.run("getAcquisitionData()")
+		if ad_json and type(ad_json) == "string" and ad_json ~= "" then
+			local ok, data = pcall(json.decode, ad_json)
+			if ok and type(data) == "table" then
+				for _, field in ipairs({"publisher_id", "click_id", "campaign_id", "banner_id", "utm_source"}) do
+					if data[field] then params[field] = data[field] end
 				end
-				if acquisition_data.click_id then
-					params.click_id = acquisition_data.click_id
-				end
-				if acquisition_data.campaign_id then
-					params.campaign_id = acquisition_data.campaign_id
-				end
-				if acquisition_data.banner_id then
-					params.banner_id = acquisition_data.banner_id
-				end
-				if acquisition_data.utm_source then
-					params.utm_source = acquisition_data.utm_source
-				end
-				print("Successfully parsed acquisition data")
-			else
-				print("Failed to parse acquisition data JSON")
 			end
-		else
-			print("No valid acquisition data received")
 		end
-
-		print("acquisition_data_json:")
-		print(acquisition_data_json)
+		return params
 	end
+}
 
-	-- для авторизации
-	params.init_data = json.encode(telegram.params)
-
-	-- для противодействия ботомайнеров
-	params.device_fingerprint = lb.get("device_fingerprint", "")
+function account.init(params)
+	if not params then return end
 	
-	-- game_id и token не хранится на устройстве
-	-- каждый раз при вызове account выдается новый токен
-	-- при заходе всё равно обращаемся к account
-	-- отдаем данные для авторизации
-	request('account', params, function (jd)
-		-- сохраняем данные для использования
-		db = jd
+	-- Включаем встроенные провайдеры по флагам
+	if params.telegram then config.providers.telegram = builtin_providers.telegram end
+	if params.fingerprint then config.providers.fingerprint = builtin_providers.fingerprint end
+	if params.acquisition then config.providers.acquisition = builtin_providers.acquisition end
+	
+	-- Коллбэки
+	if params.on_success then config.on_success = params.on_success end
+	if params.on_error then config.on_error = params.on_error end
+	if params.endpoint then config.endpoint = params.endpoint end
+	if params.request_fn then config.request_fn = params.request_fn end
+end
 
-		ab_test.init()
+function account.add_provider(name, provider_fn)
+	config.providers[name] = provider_fn
+end
 
-		if jd.new_user then
-			-- создание аккаунта c данными кампании привлечения
-			amplitude.track("visits", { new_user = true }, {
-				is_debug = sys.get_engine_info().is_debug,
-				referral = db.referral_id,
-				ab_group = ab_test.ab_group,
-				publisher_id = params.publisher_id or nil,
-				click_id = params.click_id or nil,
-				campaign_id = params.campaign_id or nil,
-				banner_id = params.banner_id or nil,
-				utm_source = params.utm_source or nil,
-			})
-
-			-- фиксируем как заработанные деньги
-			amplitude.track("earn", { type = "coins", value = db.coins })
-
-			-- показать термсы
-			--popup.show("laws_documents")
-			-- приветствие
-			popup.show("welcome", {no_stack = true})
-		else
-			amplitude.track("visits", { new_user = false })
+local function collect_params()
+	local params = {}
+	for _, provider in pairs(config.providers) do
+		local result = provider()
+		if result and type(result) == "table" then
+			for k, v in pairs(result) do
+				params[k] = v
+			end
 		end
+	end
+	return params
+end
 
-		-- если пользователь не завершил регистрацию
-		if db.avatar_id == 0 then
-			-- приветствие
-			popup.show("welcome", {no_stack = true}) 
+function account.login(custom_params)
+	local params = collect_params()
+	
+	if custom_params then
+		for k, v in pairs(custom_params) do
+			params[k] = v
 		end
-		
-		-- время пошло
-		msg.post("loader:/loader", "synchronizeTime")
-		
-		-- скрыть лоадер
-		msg.post('/loader#gui', 'hide_background')
-		
-		-- Запускаем главное меню
-		msg.post("loader:/loader", "MAIN_MENU")
-	end, error_callback, false)
+	end
+	
+	local req_fn = config.request_fn or request
+	if not req_fn then
+		error("account: request function not defined")
+		return
+	end
+	
+	req_fn(config.endpoint, params, function(data)
+		config.on_success(data, params)
+	end, function(err)
+		config.on_error(err, params)
+	end, false)
 end
 
 function account.create(params, callback)
-	request('account', params, function (jd)
-		-- успешная регистрация
-		callback()
-
-	end, error_callback, true)
+	local req_fn = config.request_fn or request
+	req_fn(config.endpoint, params, function(data)
+		if callback then callback(data) end
+	end, config.on_error, true)
 end
 
 return account
