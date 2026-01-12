@@ -1,3 +1,5 @@
+local arabic = require "modules.arabic.arabic"
+
 local lang_configs = json.decode(sys.load_resource("/configs/languages.json"))
 
 local lang = {}
@@ -128,21 +130,21 @@ function lang.get_font_name(node, font)
 		else
 			font_name = font_name.."_bold"
 		end
-		
+
 	elseif font_name == "font_ar" then
 		if current_font == hash("font_regular") or current_font == hash("font_ar_regular") then
 			font_name = font_name.."_regular"
 		else
 			font_name = font_name.."_bold"
 		end
-		
+
 	elseif font_name == "font_ko" then
 		if current_font == hash("font_regular") or current_font == hash("font_ko_regular") then
 			font_name = font_name.."_regular"
 		else
 			font_name = font_name.."_bold"
 		end
-		
+
 	elseif font_name == "font_ja" then
 		if current_font == hash("font_regular") or current_font == hash("font_ja_regular") then
 			font_name = font_name.."_regular"
@@ -150,7 +152,7 @@ function lang.get_font_name(node, font)
 			font_name = font_name.."_bold"
 		end
 	end]]
-	
+
 	return font_name
 end
 
@@ -168,10 +170,10 @@ local function getMaxHeightByFirstLetter(node, text)
 	-- добавить 1 символ из набора xn бы посмотреть высоту
 	gui.set_text(node, utf8.sub(text, 1, 1))
 	local text_data = gui.get_text_metrics_from_node(node)
-	
+
 	-- строка снова пустая
 	gui.set_text(node, "")
-	
+
 	return text_data.height
 end
 
@@ -180,12 +182,12 @@ local function addTextAndTrimIfNeededAR(node, text, max_height)
 	if not max_height then
 		max_height = getMaxHeightByFirstLetter(node, text)
 	end
-	
+
 	local current_text = gui.get_text(node)
 
 	-- Разбиваем текст на слова
 	local words = splitTextIntoWords(text)
-	
+
 	-- Добавляем весь текст в узел, разделяя его по словам
 	if current_text == "" then
 		gui.set_text(node, table.concat(words, " "))
@@ -198,13 +200,13 @@ local function addTextAndTrimIfNeededAR(node, text, max_height)
 	local current_height = text_data.height
 	local removed_text = "" -- Строка для хранения удаленного текста
 	local increased_height = nil
-	
+
 	-- Если ширина превышает максимальное значение
 	while current_height > max_height do
 		-- Удаляем первое слово из текста
 		local first_word = table.remove(words, 1)
 		removed_text = removed_text .. first_word .. " "
-		
+
 		-- Добавляем весь текст в узел, разделяя его по словам
 		if current_text == "" then
 			gui.set_text(node, table.concat(words, " "))
@@ -221,7 +223,7 @@ local function addTextAndTrimIfNeededAR(node, text, max_height)
 			increased_height = current_height
 		end
 	end
-	
+
 	--print("Удаленный текст:", removed_text)
 	if removed_text and #removed_text > 0 then
 		addTextAndTrimIfNeededAR(node, removed_text, current_height + 99) -- TODO вообщем так и не понял как добыть этот 99
@@ -232,7 +234,7 @@ function addTextAndTrimIfNeededJA(node, text, max_height)
 	if not max_height then
 		max_height = getMaxHeightByFirstLetter(node, text)
 	end
-	
+
 	-- Разбиваем текст на слова
 	local words = {}
 	for word in string.gmatch(text, "[^%s]+") do
@@ -240,7 +242,7 @@ function addTextAndTrimIfNeededJA(node, text, max_height)
 	end
 
 	local test_text = ""
-	
+
 	-- Добавляем слова поочередно и проверяем высоту
 	for _, word in ipairs(words) do
 		gui.set_text(node, test_text.." "..word)
@@ -300,7 +302,7 @@ function lang.set(nodeName, textKey, params)
 			text = string.gsub(text, '%{ '..k..' %}', v)
 		end
 	end
-	
+
 	local font_name = lang.get_font_name(node, params.font)
 
 	-- нужно сохранять инфу в table дополнительно
@@ -311,7 +313,7 @@ function lang.set(nodeName, textKey, params)
 		-- если арабский текст
 		-- мы инвертируем текст и слепляем его переходами
 		-- мы печаетем по символу и переносим текст так чтобы он писался сверху вниз а не снизу вверх
-		text = modifier.modifierToArab(text)
+		text = arabic.convert(text)
 		gui.set_text(node, "")
 		-- Добавляем текст и обрезаем его до указанной ширины
 		addTextAndTrimIfNeededAR(node, text)
