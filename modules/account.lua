@@ -33,7 +33,7 @@ local builtin_providers = {
 		if sys_info.system_name ~= "HTML5" then return {} end
 		local params = {}
 		
-		local referral_id = html5.run("getRefferal()")
+		local referral_id = html5.run("getReferral()")
 		if referral_id and referral_id ~= "" then
 			params.referral_id = referral_id
 		end
