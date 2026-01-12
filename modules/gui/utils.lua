@@ -393,17 +393,51 @@ function align_icon_and_text(arg1, arg2, arg3, arg4)
 	gui.set_position(root_node, vmath.vector3(x_pos, 0, 0))
 
 	-- Re-position children based on alignment
-	-- Assuming anchors/pivots are Center. 
-	-- If "right" -> Text | Icon
-	-- Else -> Icon | Text
+	
+	local function get_x_offset(node, w)
+		local p = gui.get_pivot(node)
+		if p == gui.PIVOT_W or p == gui.PIVOT_NW or p == gui.PIVOT_SW then
+			return 0.5 * w
+		elseif p == gui.PIVOT_E or p == gui.PIVOT_NE or p == gui.PIVOT_SE then
+			return -0.5 * w
+		end
+		return 0
+	end
+
+	-- Center X positions relative to Left Edge (0) would be:
+	-- (Adjusting so origin is center of element)
+	-- Actually, let's calculate target CENTER X for each element first.
+	
+	local text_center_x, icon_center_x
 	
 	if align == "right" then
-		gui.set_position(text_node, vmath.vector3(-(width/2) + (text_width/2), 0, 0))
-		gui.set_position(icon_node, vmath.vector3(-(width/2) + text_width + space + (icon_width/2), 0, 0))
+		-- Text | Icon
+		text_center_x = -(width/2) + (text_width/2)
+		icon_center_x = -(width/2) + text_width + space + (icon_width/2)
 	else
-		gui.set_position(icon_node, vmath.vector3(-(width/2) + (icon_width/2), 0, 0))
-		gui.set_position(text_node, vmath.vector3(-(width/2) + icon_width + space + (text_width/2), 0, 0))
+		-- Icon | Text
+		icon_center_x = -(width/2) + (icon_width/2)
+		text_center_x = -(width/2) + icon_width + space + (text_width/2)
 	end
+	
+	-- Apply pivot offsets
+	-- If Pivot is Center (default): Pos = CenterX.
+	-- If Pivot is West: Origin is Left Edge. Pos = CenterX - Width/2.
+	-- If Pivot is East: Origin is Right Edge. Pos = CenterX + Width/2.
+	
+	local function apply_pos(node, center_x, w)
+		local p = gui.get_pivot(node)
+		local final_x = center_x
+		if p == gui.PIVOT_W or p == gui.PIVOT_NW or p == gui.PIVOT_SW then
+			final_x = center_x - (w/2)
+		elseif p == gui.PIVOT_E or p == gui.PIVOT_NE or p == gui.PIVOT_SE then
+			final_x = center_x + (w/2)
+		end
+		gui.set_position(node, vmath.vector3(final_x, 0, 0))
+	end
+
+	apply_pos(text_node, text_center_x, text_width)
+	apply_pos(icon_node, icon_center_x, icon_width)
 end
 
 function format_count(template, count)
