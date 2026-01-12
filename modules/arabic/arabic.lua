@@ -62,7 +62,7 @@ local function isNonArabicChar(c)
     return false
 end
 
-function M.arabic(str)
+function M.convert(str)
     local letters = {}
     local k = 1
     for c in string.gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
