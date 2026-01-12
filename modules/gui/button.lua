@@ -20,7 +20,7 @@ local config = {
     animation_duration = 0.1 -- длительность анимации
 }
 
-function M.touch(self, action, node_string, callback, without_animation, sound_file)
+function touch(self, action, node_string, callback, without_animation, sound_file)
     local node = (type(node_string) == 'string' and gui.get_node(node_string) or node_string)
 
     if not self.active_button then
@@ -99,7 +99,7 @@ function M.touch(self, action, node_string, callback, without_animation, sound_f
     end
 end
 
-function M.touch_deactivate(self, without_animation)
+function touch_deactivate(self, without_animation)
     if self.active_button then
         for i, v in ipairs(self.active_button) do
             if not without_animation then
@@ -124,10 +124,6 @@ function M.init(params)
     if params.animation_duration then
             config.animation_duration = params.animation_duration
     end
-
-    -- Export legacy globals
-    _G.touch = M.touch
-    _G.touch_deactivate = M.touch_deactivate
 end
 
 return M
