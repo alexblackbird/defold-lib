@@ -203,4 +203,14 @@ function lang.isEnglishLetter(char)
 	return char:match("[%a%s%-]") ~= nil
 end
 
+-- Арабский стиль для правых строк
+function lang.convert_to_arabic_style_for_right(node, pivot)
+	local font_name = lang.get_font_name(node)
+	if string.find(font_name, "font_ar") then
+		gui.set_pivot(node, pivot or gui.PIVOT_E)
+		local pos = gui.get_position(node)
+		gui.set_position(node, vmath.vector3(-pos.x, pos.y, 0))
+	end
+end
+
 return lang
