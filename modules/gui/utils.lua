@@ -352,15 +352,17 @@ function updateProgressBar(node, width, height, progress_count, overall_count, d
 	end)
 end
 
-function align_icon_and_text(arg1, arg2, arg3)
+function align_icon_and_text(arg1, arg2, arg3, arg4)
 	local text_node, root_node, icon_node
 	local pos = { x = 0, y = 0 }
+	local align = nil
 
 	if type(arg1) == "userdata" then
-		-- Legacy signature: align_icon_and_text(text_node, root_node, icon_node)
+		-- Legacy signature: align_icon_and_text(text_node, root_node, icon_node, align)
 		text_node = arg1
 		root_node = arg2
 		icon_node = arg3
+		align = arg4
 	else
 		-- Standard signature: align_icon_and_text(name, pos)
 		local name = arg1
@@ -383,11 +385,25 @@ function align_icon_and_text(arg1, arg2, arg3)
 	local space = 10
 	local text_metrics = gui.get_text_metrics_from_node(text_node)
 	local scale = gui.get_scale(text_node)
-	local width = icon_width + space + (text_metrics.width * scale.x)
+	local text_width = text_metrics.width * scale.x
+	local width = icon_width + space + text_width
 	local x_pos = -(width / 2) + pos.x
 
 	gui.set_size(root_node, vmath.vector3(width, 80, 0))
 	gui.set_position(root_node, vmath.vector3(x_pos, 0, 0))
+
+	-- Re-position children based on alignment
+	-- Assuming anchors/pivots are Center. 
+	-- If "right" -> Text | Icon
+	-- Else -> Icon | Text
+	
+	if align == "right" then
+		gui.set_position(text_node, vmath.vector3(-(width/2) + (text_width/2), 0, 0))
+		gui.set_position(icon_node, vmath.vector3(-(width/2) + text_width + space + (icon_width/2), 0, 0))
+	else
+		gui.set_position(icon_node, vmath.vector3(-(width/2) + (icon_width/2), 0, 0))
+		gui.set_position(text_node, vmath.vector3(-(width/2) + icon_width + space + (text_width/2), 0, 0))
+	end
 end
 
 function format_count(template, count)
