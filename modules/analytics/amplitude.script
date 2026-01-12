@@ -1,9 +1,0 @@
-function init(self)
-	
-end
-
-function on_message(self, message_id, message, sender)
-	if message_id == hash("track") then
-		amplitude.create(message.event_name, message.event_properties, message.user_properties)
-	end
-end
