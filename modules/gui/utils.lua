@@ -352,21 +352,31 @@ function updateProgressBar(node, width, height, progress_count, overall_count, d
 	end)
 end
 
-function align_icon_and_text(name, pos)
-	if not pos then
-		pos = { x = 0, y = 0 }
-	end
-
+function align_icon_and_text(arg1, arg2, arg3)
 	local text_node, root_node, icon_node
+	local pos = { x = 0, y = 0 }
 
-	if name:sub(-1) == "/" then
-		text_node = gn(name .. "txt")
-		root_node = gn(name .. "to_center")
-		icon_node = gn(name .. "icon")
+	if type(arg1) == "userdata" then
+		-- Legacy signature: align_icon_and_text(text_node, root_node, icon_node)
+		text_node = arg1
+		root_node = arg2
+		icon_node = arg3
 	else
-		text_node = gn(name .. "_txt")
-		root_node = gn(name .. "_to_center")
-		icon_node = gn(name .. "_icon")
+		-- Standard signature: align_icon_and_text(name, pos)
+		local name = arg1
+		if arg2 then
+			pos = arg2
+		end
+
+		if name:sub(-1) == "/" then
+			text_node = gn(name .. "txt")
+			root_node = gn(name .. "to_center")
+			icon_node = gn(name .. "icon")
+		else
+			text_node = gn(name .. "_txt")
+			root_node = gn(name .. "_to_center")
+			icon_node = gn(name .. "_icon")
+		end
 	end
 
 	local icon_width = gui.get_size(icon_node).x
