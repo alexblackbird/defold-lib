@@ -1,4 +1,4 @@
-local md5 = require "lib.utils.md5"
+local md5 = require "modules.utils.md5"
 
 -- BODY
 local M = {}

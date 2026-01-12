@@ -9,12 +9,6 @@ function network.is_connected()
 	else
 		status = false
 	end
-
-	--[[if not status then
-		http.request("https://www.google.com", "GET", function (self, id, response)
-			status = true
-		end)
-	end]]
 	return status
 end
 	
