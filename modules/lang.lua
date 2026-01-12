@@ -123,30 +123,8 @@ end
 local scaleTable = {}
 
 function lang.get_font_name(node, font)
-	local font_name = font or lang.font
-	if not node then return font_name end
-	
-	local current_font = gui.get_font(node)
-	
-	if font_name == "font" then
-		if current_font == hash("font_regular") then
-			font_name = "font_regular"
-		else
-			font_name = "font_bold"
-		end
-	elseif font_name == "font_ar" then
-		if current_font == hash("font_regular") or current_font == hash("font_ar_regular") then
-			font_name = "font_ar_regular"
-		else
-			font_name = "font_ar_bold"
-		end
-	elseif font_name == "font_ko" then
-		font_name = "font_ko_regular"
-	elseif font_name == "font_ja" then
-		font_name = "font_ja_regular"
-	end
-	
-	return font_name
+	-- Просто возвращаем font из pool для текущего языка
+	return font or lang.font
 end
 
 function lang.set(nodeName, textKey, params)
