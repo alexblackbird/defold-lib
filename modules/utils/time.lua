@@ -1,17 +1,22 @@
 local time = {}
 
-function time.synchronizeTime(unixtime)
+function time.synchronize_time(unixtime)
   if not unixtime then
     unixtime = os.time()
   end
 
   delta_time = os.time() - unixtime
 
-  db.unixtime = os.time() - delta_time
-  timer.delay(1.0, true, function()
-    db.unixtime = os.time() - delta_time
-  end)
+  if db then
+      db.unixtime = os.time() - delta_time
+      timer.delay(1.0, true, function()
+        db.unixtime = os.time() - delta_time
+      end)
+  end
 end
+
+-- Alias for compatibility
+time.synchronizeTime = time.synchronize_time
 
 time.time_translations = {
   ['en'] = {
@@ -105,9 +110,11 @@ function time.get_proper_form(value, forms)
 end
 
 function time.get_human_time_symbol(seconds)
-  local lang = lang.language
+  local lang_code = "en"
+  if lang and lang.language then lang_code = lang.language end
+  
   local seconds = tonumber(seconds)
-  local space = time.time_translations[lang].space or " "
+  local space = time.time_translations[lang_code].space or " "
 
   if seconds <= 0 then
     return "00:00"
@@ -120,25 +127,28 @@ function time.get_human_time_symbol(seconds)
     local result = ""
 
     if days > 0 then
-      result = result .. days .. space .. time.get_proper_form(days, time.time_translations[lang].days)
+      result = result .. days .. space .. time.get_proper_form(days, time.time_translations[lang_code].days)
     end
 
     if hours > 0 then
-      result = result .. (result ~= "" and " " or "") .. hours .. space .. time.get_proper_form(hours, time.time_translations[lang].hours)
+      result = result .. (result ~= "" and " " or "") .. hours .. space .. time.get_proper_form(hours, time.time_translations[lang_code].hours)
     end
 
     if mins > 0 then
-      result = result .. (result ~= "" and " " or "") .. mins .. space .. time.get_proper_form(mins, time.time_translations[lang].minutes)
+      result = result .. (result ~= "" and " " or "") .. mins .. space .. time.get_proper_form(mins, time.time_translations[lang_code].minutes)
     end
 
     if secs > 0 and result == "" then
       -- Добавляем секунды только если ничего больше не отображается
-      result = secs .. space .. time.get_proper_form(secs, time.time_translations[lang].seconds)
+      result = secs .. space .. time.get_proper_form(secs, time.time_translations[lang_code].seconds)
     end
 
     return result
   end
 end
+
+-- Aliases
+time.getHumanTimeSymbol = time.get_human_time_symbol
 
 
 function time.get_human_time(seconds)
@@ -158,6 +168,9 @@ function time.get_human_time(seconds)
 
   end
 end
+
+-- Alias
+time.getHumanTime = time.get_human_time
 
 -- сатурация времени - вместо недель атака за максимум 24 часа
 function time.clamp(x, a, b)

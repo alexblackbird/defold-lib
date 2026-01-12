@@ -2,8 +2,11 @@ local transitions = require "monarch.transitions.gui"
 local monarch = require "monarch.monarch"
 
 local popup = {}
-
 popup.pool = {}
+
+local config = {
+    enable_fade = true
+}
 
 -- MONARCH
 function popup.set_animation(self, background_node)
@@ -38,23 +41,22 @@ function popup.on_message_monarch(self, message_id, message, sender, params)
 	end
 	
 	if message_id == hash("transition_show_in") then
-		if params.is_popup then
+		if params.is_popup and config.enable_fade then
 			msg.post("loader:/fade#gui", "show", fade_params)
 		end
 		self.active_button = {}
 		-- msg.post("loader:/sound#woosh", "play_sound")
 		self.data = monarch.data(self.MONARCH_ID)
 	elseif message_id == hash("transition_back_out") then
-		msg.post("loader:/fade#gui", "hide")
+		if config.enable_fade then
+			msg.post("loader:/fade#gui", "hide")
+		end
 		self.active_button = {}
 	end
 end
 
 function popup.show(window_id, options, data)
-	pprint("текущий попап")
-	pprint(popup.current_top)
-	pprint(popup.current_data)
-	if not popup.current_top  then -- or popup.current_top ~= window_id
+	if not popup.current_top then -- or popup.current_top ~= window_id
 		monarch.show(window_id, options, data, function ()
 			
 		end)
@@ -86,6 +88,13 @@ function popup.open_next(delay)
 		-- удалем из очереди 
 		table.remove(popup.pool, i)
 	end
+end
+
+function popup.init(params)
+    params = params or {}
+    if params.enable_fade ~= nil then
+        config.enable_fade = params.enable_fade
+    end
 end
 
 return popup
