@@ -169,3 +169,5 @@ end
 function request_cancel(_req)
 	_req:cancel()
 end
+
+return request
