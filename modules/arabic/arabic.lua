@@ -1,32 +1,22 @@
 local M = {}
 
-local letters = {}
-
-local unicode = require "lib.modifier.unicode"
-local rev = require "lib.modifier.reverse"
+local unicode = require "modules.arabic.unicode"
+local rev = require "modules.arabic.reverse"
 
 local format = string.format
 local byte = string.byte
 local char = string.char
 
-function toHex(str)
+local function toHex(str)
     return (str:gsub('.', function(c)
         return format('%02X', byte(c))
     end))
 end
 
-function fromHex(str)
+local function fromHex(str)
     return (str:gsub('..', function(cc)
         return char(tonumber(cc, 16))
     end))
-end
-
-function addToTable(str)
-    k = 1
-    for c in string.gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
-        letters[k] = tostring(string.lower(toHex(c)))
-        k = k + 1
-    end
 end
 
 local non_arabic_alphabet_and_digits = {
@@ -72,47 +62,15 @@ local function isNonArabicChar(c)
     return false
 end
 
-function M.modifierToArab(str)
+function M.arabic(str)
+    local letters = {}
+    local k = 1
+    for c in string.gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
+        letters[k] = tostring(string.lower(toHex(c)))
+        k = k + 1
+    end
+    
     local hex = ""
-    addToTable(str)
-    
-
-    --[[ 
-    local code = 0xfef8  -- Код Unicode для "ل"
-
-    local symbol = utf8.char(code)
-    print(symbol)  -- Это выведет "لآ"
-    pprint(tostring(string.lower(toHex(symbol))))
-    
-    
-    pprint(toHex("ل"))
-
-    local symbol = 'A'
-    local code = utf8.codepoint("ل")
-    print(code)  -- Выведет: 65
-
-    local code = 65275
-    local symbol = utf8.char(code)
-    print(symbol) 
-    pprint(tostring(string.lower(toHex(symbol))))
-
-    local isolated = 65275 -- для изолированной формы
-    local initial = 65276 -- для начальной формы
-    local medial = 65277 -- для средней формы
-    local final = 65278 -- для конечной формы
-
-    -- Получение символов из кодов Unicode
-    local symbol_isolated = utf8.char(isolated)
-    local symbol_initial = utf8.char(initial)
-    local symbol_medial = utf8.char(medial)
-    local symbol_final = utf8.char(final)
-
-    -- Вывод символов
-    pprint(tostring(string.lower(toHex(symbol_isolated))))
-    pprint(tostring(string.lower(toHex(symbol_initial))))
-    pprint(tostring(string.lower(toHex(symbol_medial))))
-    pprint(tostring(string.lower(toHex(symbol_final))))
-    ]]
     
     for k, l in pairs(letters) do        
         for u in pairs(unicode.hex) do
@@ -227,7 +185,7 @@ function M.modifierToArab(str)
 
     hex = table.concat(hex_table, "")
     
-    letters = {}
+    -- reset letters not needed as it is local now
     local Text = rev.utf8reverse(fromHex(tostring(hex)))
 
     return Text
