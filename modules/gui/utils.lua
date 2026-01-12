@@ -1,6 +1,3 @@
----@diagnostic disable: undefined-field, discard-returns
-
--- Enable node
 function enable(nodeName)
 	if type(nodeName) == "string" then
 		gui.set_enabled(gn(nodeName), true)
@@ -9,7 +6,6 @@ function enable(nodeName)
 	end
 end
 
--- Disable node
 function disable(nodeName)
 	if type(nodeName) == "string" then
 		gui.set_enabled(gn(nodeName), false)
@@ -18,13 +14,12 @@ function disable(nodeName)
 	end
 end
 
--- Set visibility
 function visible(nodeName, enable)
 	gui.set_visible(gn(nodeName), enable)
 end
 
--- Set color from hex
 function color(nodeName, hex)
+
 	if type(nodeName) == "string" then
 		gui.set_color(gn(nodeName), hexToVector4(hex))
 	else
@@ -41,37 +36,17 @@ function pf(nodeName, flipbook)
 	end
 end
 
--- Get node shorthand
 function gn(nodeName)
 	return gui.get_node(nodeName)
 end
 
--- Create vector3
 function vector(x,y,z)
 	return vmath.vector3(x, y or x, z or x)
 end
 
--- Create vector4 from hex string
-function hexToVector4(hexColor)
-	-- Remove hash if present
-    if string.sub(hexColor, 1, 1) == "#" then
-	    hexColor = string.sub(hexColor, 2)
-    end
-
-	-- Extract RGB
-	local r = tonumber(string.sub(hexColor, 1, 2), 16) / 255
-	local g = tonumber(string.sub(hexColor, 3, 4), 16) / 255
-	local b = tonumber(string.sub(hexColor, 5, 6), 16) / 255
-
-	return vmath.vector4(r, g, b, 1)
-end
-
--- Align text on button (Project specific logic kept for compatibility)
+-- равняет ценнки на кнопке
 function gui_align_text()
----@diagnostic disable-next-line: undefined-field
-	local status, text_data = pcall(function() return gui.get_text_metrics_from_node(gui.get_node("buy/label")) end)
-    if not status then return end -- Node might not exist in generic context
-
+	local text_data = gui.get_text_metrics_from_node(gui.get_node("buy/label"))
 	local BUTTON_SCALE = 1.2
 	local MAX_WIDTH = 120
 	local new_scale = BUTTON_SCALE / (text_data.width / MAX_WIDTH)
@@ -85,22 +60,25 @@ function gui_align_text()
 		new_scale = BUTTON_SCALE
 	end
 
+	-- выравниваем
+	-- как понять что у нас длинная строка?
 	local text_data_1 = gui.get_text_metrics_from_node(gui.get_node("buy/label"))
 	local text_data_2 = gui.get_text_metrics_from_node(gui.get_node("buy/price"))
 	local result = text_data_1.width / text_data_2.width
-	
+	local alt_result = text_data_1.width - text_data_2.width
 	local pos1 = gui.get_position(gui.get_node("buy/label"))
 	local pos2 = gui.get_position(gui.get_node("buy/label_shadow"))
 	local pos3 = gui.get_position(gui.get_node("buy/price_shadow"))
 	local pos4 = gui.get_position(gui.get_node("buy/price"))
 	local pos5 = gui.get_position(gui.get_node("buy/box"))
 
+	--окей - если он больше в два раза, то что нужно сделать
 	pos1.x = -55 + ((result - 1) * (35 * new_scale))
 	pos2.x = -55  + ((result - 1) * (35 * new_scale))
 	pos3.x = 53 + ((result - 1) * (35 * new_scale))
 	pos4.x = 53 + ((result - 1) * (35 * new_scale))
 	pos5.x = 0 + ((result - 1) * (35 * new_scale))
-	
+
 	gui.set_position(gui.get_node("buy/label"), pos1)
 	gui.set_position(gui.get_node("buy/label_shadow"), pos2)
 	gui.set_position(gui.get_node("buy/price_shadow"), pos3)
@@ -109,7 +87,7 @@ function gui_align_text()
 end
 
 
--- Helper to create text node
+-- текстовое поле
 function gui_new_text_node(pos, text, params)
 	local node = gui.new_text_node(pos, text)
 	gui.set_font(node, hash("font"))
@@ -133,7 +111,7 @@ function gui_new_text_node(pos, text, params)
 	return node
 end
 
--- Helper to create box node with icon
+-- иконка на поле
 function gui_new_box_node(pos, texture, icon, params)
 	local node = gui.new_box_node(pos, vmath.vector3(0,0,0))
 	gui.set_texture(node, texture)
@@ -154,8 +132,9 @@ function gui_new_box_node(pos, texture, icon, params)
 	return node
 end
 
--- Delete list of nodes
+-- очищаем gui table
 function gui_delete_table(tables)
+
 	if not tables then
 		return {}
 	end
@@ -163,7 +142,7 @@ function gui_delete_table(tables)
 	if #tables > 0 then
 		for i,node in ipairs(tables) do
 			if node then
-				pcall(function() gui.delete_node(node) end)
+				gui.delete_node(node)
 			end
 		end
 		tables = {}
@@ -177,6 +156,7 @@ function getDistance(objA, objB)
 	return math.sqrt( (xDist ^ 2) + (yDist ^ 2) ) 
 end
 
+-- функция, которая проверяет, есть ли число number в таблице table
 function contains(t, n)
 	for _, value in pairs(t) do
 		if value == n then
@@ -212,8 +192,11 @@ function get_random(n, m)
 	return math.random(n,m)
 end
 
+-- кастомизируем надпись subscriptions_data.namekey
 function replace_pattern(msg, new_data, pattern)
+	-- Заменяем шаблонный тег на новую цену
 	msg = string.gsub(msg, ":%s*"..pattern.."%s*:", new_data)
+	-- Заменяем шаблонный тег с пробелами на новую цену
 	return string.gsub(msg, ":%s*"..pattern.."%s*:", new_data)
 end
 
@@ -242,12 +225,16 @@ function animateLevitaitonEffect(nodeName)
 	end
 
 	local uniqkey = tostring(msg.url())..nodeName
-	local params = animateLevitationEffectTable[uniqkey]
+
+	-- Проверяем, есть ли уже значение scale для данного uniqkey
+	local params = animateLevitaitonEffectTable[uniqkey]
 
 	if not params then
+		-- Если нет, то сохраняем текущее значение в таблице
 		params = {rot = gui.get_euler(node), pos = gui.get_position(node)}
-		animateLevitationEffectTable[uniqkey] = params
+		animateLevitaitonEffectTable[uniqkey] = params
 	else
+		-- Остановить предыдущие анимации перед запуском новых
 		gui.cancel_animation(node, 'position.y')
 		gui.cancel_animation(node, 'euler.z')
 		gui.set_euler(node, params.rot)
@@ -273,20 +260,25 @@ function animateScaleEffect(self, nodeName)
 	end
 
 	local uniqkey = tostring(msg.url()) .. nodeName
+
+	-- Проверяем, есть ли уже плейсхолдер для данного uniqkey
 	local data = self.animateScaleEffectTable[uniqkey]
 
 	if not data then
+		-- Создаём новый плейсхолдер
 		local placeholder = gui.new_box_node(gui.get_position(node), vmath.vector3(0,0,0))
 		gui.set_parent(placeholder, gui.get_parent(node))
 		gui.set_parent(node, placeholder)
 		gui.set_position(node, vmath.vector3(0, 0, 0))
 
+		-- Сохраняем начальные параметры
 		data = {
 			placeholder = placeholder,
 			node = node,
-			scale = gui.get_scale(node) 
+			scale = gui.get_scale(node) -- Сохраняем масштаб оригинального узла
 		}
 	else
+		-- Останавливаем текущие анимации и восстанавливаем параметры
 		gui.cancel_animation(data.placeholder, "scale")
 		gui.set_scale(data.placeholder, data.scale)
 		timer.cancel(data.timer_id)
@@ -296,8 +288,9 @@ function animateScaleEffect(self, nodeName)
 		gui.animate(data.placeholder, "scale", data.scale * 1.1, gui.EASING_INOUTSINE, 1.5, 0, nil, gui.PLAYBACK_ONCE_PINGPONG)
 	end
 
+	--timer.delay(1, false, scale_it)
 	local timer_id = timer.delay(3, true, scale_it)
-	
+
 	data.timer_id = timer_id
 	self.animateScaleEffectTable[uniqkey] = data
 end
@@ -307,33 +300,59 @@ function clearAllAnimationEffects(self)
 		return
 	end
 	for uniqkey, data in pairs(self.animateScaleEffectTable) do
+		-- Останавливаем анимации
 		gui.cancel_animation(data.placeholder, "scale")
+
+		-- Восстанавливаем масштаб оригинального узла
 		gui.set_scale(data.node, data.scale)
+
+		-- Убираем оригинальный узел из временного узла
 		gui.set_parent(data.node, gui.get_parent(data.placeholder))
 		gui.set_position(data.node, gui.get_position(data.placeholder))
+
+		-- Удаляем временный узел
 		gui.delete_node(data.placeholder)
 
+		-- Останавливаем таймер
 		if data.timer_id then
 			timer.cancel(data.timer_id)
 		end
 	end
 
+	-- Очищаем таблицу
 	self.animateScaleEffectTable = {}
+end
+
+function hexToVector4(hexColor)
+	-- Удаляем символ "#" из строки
+	hexColor = string.sub(hexColor, 2)
+
+	-- Извлекаем красный, зеленый и синий компоненты
+	local r = tonumber(string.sub(hexColor, 1, 2), 16) / 255
+	local g = tonumber(string.sub(hexColor, 3, 4), 16) / 255
+	local b = tonumber(string.sub(hexColor, 5, 6), 16) / 255
+
+	-- Создаем vmath.vector4 с компонентами цвета и альфа-каналом 1
+	local color = vmath.vector4(r, g, b, 1)
+
+	return color
 end
 
 function updateProgressBar(node, width, height, progress_count, overall_count, duration, min_width)
 	gui.set_enabled(node, true)
 
-	local current_weight = math.ceil((width)* progress_count / overall_count)
+	-- Определяем минимальную ширину
+	local actual_min_width = min_width or height
 
-	if min_width then
-		if current_weight < min_width then
-			current_weight = min_width
-		end
-	else
-		if current_weight < height then
-			current_weight = height
-		end
+	-- Используем интерполяцию между минимальной и максимальной шириной
+	-- При progress_count = 0: current_weight = actual_min_width
+	-- При progress_count = overall_count: current_weight = width
+	local progress_ratio = progress_count / overall_count
+	local current_weight = math.ceil(actual_min_width + (width - actual_min_width) * progress_ratio)
+
+	-- Убеждаемся что не выходим за границы
+	if current_weight < actual_min_width then
+		current_weight = actual_min_width
 	end
 
 	if current_weight > width then
@@ -345,111 +364,65 @@ function updateProgressBar(node, width, height, progress_count, overall_count, d
 	end
 
 	gui.animate(node, "size", vmath.vector3(current_weight, height, 0), gui.EASING_INOUTSINE, duration, 0, function ()
+		-- вообще ничего нет - скрыть наш бегунок
 		if progress_count == 0 then
-			gui.set_enabled(node, false)
-			gui.set_size(node, vmath.vector3(min_width or height, height, 0))
+			--	gui.set_enabled(node, false)
+			--	gui.set_size(node, vmath.vector3(min_width or height, height, 0))
 		end
 	end)
 end
 
-function align_icon_and_text(arg1, arg2, arg3, arg4)
-	local text_node, root_node, icon_node
-	local pos = { x = 0, y = 0 }
-	local align = nil
+function align_icon_and_text(text_node, root_node, icon_node, alignment)
+	alignment = alignment or "left"  -- по умолчанию left
 
-	if type(arg1) == "userdata" then
-		-- Legacy signature: align_icon_and_text(text_node, root_node, icon_node, align)
-		text_node = arg1
-		root_node = arg2
-		icon_node = arg3
-		align = arg4
-	else
-		-- Standard signature: align_icon_and_text(name, pos)
-		local name = arg1
-		if arg2 then
-			pos = arg2
-		end
-
-		if name:sub(-1) == "/" then
-			text_node = gn(name .. "txt")
-			root_node = gn(name .. "to_center")
-			icon_node = gn(name .. "icon")
-		else
-			text_node = gn(name .. "_txt")
-			root_node = gn(name .. "_to_center")
-			icon_node = gn(name .. "_icon")
-		end
-	end
-
+	-- получаем длинну текста
 	local icon_width = gui.get_size(icon_node).x
 	local space = 10
 	local text_metrics = gui.get_text_metrics_from_node(text_node)
-	local scale = gui.get_scale(text_node)
-	local text_width = text_metrics.width * scale.x
-	local width = icon_width + space + text_width
-	local x_pos = -(width / 2) + pos.x
 
-	gui.set_size(root_node, vmath.vector3(width, 80, 0))
-	gui.set_position(root_node, vmath.vector3(x_pos, 0, 0))
+	-- суммируем весь контент
+	local scale_text = gui.get_scale(text_node)
+	local scale_icon = gui.get_scale(icon_node)
 
-	-- Re-position children based on alignment
-	
-	local function get_x_offset(node, w)
-		local p = gui.get_pivot(node)
-		if p == gui.PIVOT_W or p == gui.PIVOT_NW or p == gui.PIVOT_SW then
-			return 0.5 * w
-		elseif p == gui.PIVOT_E or p == gui.PIVOT_NE or p == gui.PIVOT_SE then
-			return -0.5 * w
-		end
-		return 0
-	end
+	local width = (icon_width*scale_icon.x)  + space + (text_metrics.width*scale_text.x)
 
-	-- Center X positions relative to Left Edge (0) would be:
-	-- (Adjusting so origin is center of element)
-	-- Actually, let's calculate target CENTER X for each element first.
-	
-	local text_center_x, icon_center_x
-	
-	if align == "right" then
-		-- Text | Icon
-		text_center_x = -(width/2) + (text_width/2)
-		icon_center_x = -(width/2) + text_width + space + (icon_width/2)
+	local pos = gui.get_position(root_node)
+	local x_pos
+
+	if alignment == "right" then
+		x_pos = width/2
 	else
-		-- Icon | Text
-		icon_center_x = -(width/2) + (icon_width/2)
-		text_center_x = -(width/2) + icon_width + space + (text_width/2)
+		x_pos = -(width/2)
 	end
-	
-	-- Apply pivot offsets
-	-- If Pivot is Center (default): Pos = CenterX.
-	-- If Pivot is West: Origin is Left Edge. Pos = CenterX - Width/2.
-	-- If Pivot is East: Origin is Right Edge. Pos = CenterX + Width/2.
-	
-	local function apply_pos(node, center_x, w)
-		local p = gui.get_pivot(node)
-		local final_x = center_x
-		if p == gui.PIVOT_W or p == gui.PIVOT_NW or p == gui.PIVOT_SW then
-			final_x = center_x - (w/2)
-		elseif p == gui.PIVOT_E or p == gui.PIVOT_NE or p == gui.PIVOT_SE then
-			final_x = center_x + (w/2)
-		end
-		gui.set_position(node, vmath.vector3(final_x, 0, 0))
-	end
-
-	apply_pos(text_node, text_center_x, text_width)
-	apply_pos(icon_node, icon_center_x, icon_width)
+	-- выравниваем
+	gui.set_position(root_node, vmath.vector3(x_pos, pos.y, 0))
 end
 
-function format_count(template, count)
-	return template:gsub("{count}", tostring(count))
+function clone_tree(self, template_id, parent_id)
+	local nodes = gui.clone_tree(gui.get_node(template_id))
+	local node_root = nodes[template_id]
+
+	if self.instances then
+		self.instances["reward1"] = nodes
+	end
+
+	gui.set_enabled(node_root, true)
+
+	if parent_id then
+		gui.set_parent(node_root, gui.get_node(parent_id))
+	end
+
+	return nodes, node_root
 end
 
-function esc(s) 
+--------------------------------------------------------------------
+-- helper: выполнить JS-функцию window.<fn>(arg1,arg2,…)
+--------------------------------------------------------------------
+function esc(s)        -- грубое экранирование для JS-строки
 	return s:gsub("\\","\\\\"):gsub("'", "\\'"):gsub("\n","\\n")
 end
 
 function js(fn, ...)
-	if not sys_info then sys_info = sys.get_sys_info() end
 	if sys_info.system_name ~= "HTML5" then 
 		return 
 	end
@@ -458,7 +431,7 @@ function js(fn, ...)
 	for i,v in ipairs({...}) do
 		if type(v) == "string" then
 			buf[i] = "'" .. esc(v) .. "'"
-		else           
+		else                      -- таблицы / числа → JSON
 			buf[i] = json.encode(v)
 		end
 	end
@@ -469,6 +442,7 @@ function draw(self, node_name)
 	local node = gn(node_name)
 	local size = gui.get_size(gn(node_name))
 
+	-- Если это текстовая нода, используем реальную высоту текста
 	if gui.get_type(node) == gui.TYPE_TEXT then
 		local text_data = gui.get_text_metrics_from_node(node)
 		if text_data and text_data.height > 0 then
