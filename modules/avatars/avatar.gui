@@ -1,0 +1,34 @@
+script: ""
+textures {
+  name: "avatars"
+  texture: "/modules/loot_module/loot_module.atlas"
+}
+nodes {
+  size {
+    x: 125.0
+    y: 125.0
+    z: 0.0
+    w: 1.0
+  }
+  type: TYPE_PIE
+  id: "avatar_mask"
+  inherit_alpha: true
+  clipping_mode: CLIPPING_MODE_STENCIL
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 125.0
+    y: 125.0
+    z: 0.0
+    w: 1.0
+  }
+  type: TYPE_BOX
+  id: "avatar_image"
+  parent: "avatar_mask"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+max_nodes: 512
