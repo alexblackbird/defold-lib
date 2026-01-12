@@ -213,7 +213,7 @@ function no_animation(node)
 	end)
 end
 
-animateLevitationEffectTable = {}
+local animateLevitationEffectTable = {}
 function animateLevitaitonEffect(nodeName)
 	local node
 
@@ -227,12 +227,12 @@ function animateLevitaitonEffect(nodeName)
 	local uniqkey = tostring(msg.url())..nodeName
 
 	-- Проверяем, есть ли уже значение scale для данного uniqkey
-	local params = animateLevitaitonEffectTable[uniqkey]
+	local params = animateLevitationEffectTable[uniqkey]
 
 	if not params then
 		-- Если нет, то сохраняем текущее значение в таблице
 		params = {rot = gui.get_euler(node), pos = gui.get_position(node)}
-		animateLevitaitonEffectTable[uniqkey] = params
+		animateLevitationEffectTable[uniqkey] = params
 	else
 		-- Остановить предыдущие анимации перед запуском новых
 		gui.cancel_animation(node, 'position.y')
