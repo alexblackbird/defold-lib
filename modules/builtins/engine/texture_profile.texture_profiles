@@ -1,0 +1,68 @@
+path_settings {
+  path: "**"
+  profile: "Default"
+}
+profiles {
+  name: "Default"
+  platforms {
+    os: OS_ID_GENERIC
+    formats {
+      format: TEXTURE_FORMAT_RGBA
+      compressor: "BasisU"
+      compressor_preset: "BASISU_LOW"
+    }
+    mipmaps: false
+  }
+}
+profiles {
+  name: "to512"
+  platforms {
+    os: OS_ID_GENERIC
+    formats {
+      format: TEXTURE_FORMAT_RGBA
+      compressor: "BasisU"
+      compressor_preset: "BASISU_LOW"
+    }
+    mipmaps: false
+    max_texture_size: 512
+  }
+}
+profiles {
+  name: "to2048"
+  platforms {
+    os: OS_ID_GENERIC
+    formats {
+      format: TEXTURE_FORMAT_RGBA
+      compressor: "BasisU"
+      compressor_preset: "BASISU_LOW"
+    }
+    mipmaps: false
+    max_texture_size: 2048
+  }
+}
+profiles {
+  name: "to1024"
+  platforms {
+    os: OS_ID_GENERIC
+    formats {
+      format: TEXTURE_FORMAT_RGBA
+      compressor: "BasisU"
+      compressor_preset: "BASISU_LOW"
+    }
+    mipmaps: false
+    max_texture_size: 1024
+  }
+}
+profiles {
+  name: "rgb"
+  platforms {
+    os: OS_ID_GENERIC
+    formats {
+      format: TEXTURE_FORMAT_RGB
+      compressor: "BasisU"
+      compressor_preset: "BASISU_LOW"
+    }
+    mipmaps: false
+    premultiply_alpha: false
+  }
+}

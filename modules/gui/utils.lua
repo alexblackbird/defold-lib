@@ -456,6 +456,7 @@ function draw(self, node_name)
 	self.y_position = self.y_position - size.y - self.y_space
 end
 
+-- не доделано self.instances["reward1"]
 function clone_tree(self, template_id, parent_id)
     local nodes = gui.clone_tree(gui.get_node(template_id))
     local node_root = nodes[template_id]
