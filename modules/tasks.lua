@@ -38,7 +38,8 @@ end
 -- adapter - конфигурация UI (tasks_adapter.lua)
 -- configs - данные задач
 -- buttons - модуль для обработки кнопок
-function tasks.init(self, configs, adapter, buttons)
+-- layout - (опционально) Druid Layout для добавления созданных нод
+function tasks.init(self, configs, adapter, buttons, layout)
     -- Сохраняем адаптер для использования в других функциях
     tasks.adapter = adapter
 
@@ -54,8 +55,11 @@ function tasks.init(self, configs, adapter, buttons)
     local template_node = gui.get_node(template_id)
     local element_height = gui.get_size(template_node).y
 
-    -- если позиция не установлена, устанавливаем ее в 0
-    if not self.y_position then
+    -- Сохраняем layout для использования
+    tasks.layout = layout
+
+    -- если позиция не установлена и layout не передан, устанавливаем в 0
+    if not layout and not self.y_position then
         self.y_position = 0
     end
 
@@ -235,42 +239,63 @@ function tasks.init(self, configs, adapter, buttons)
         end)
     end
 
-    -- Вычисляем стартовую позицию с учетом высоты элемента
-    local adjusted_start_y = self.y_position - (element_height / 2)
+    -- Получаем количество тасков
+    local tasks_count = #(configs or {})
+    local content_height = 0
+    local created_nodes = {}
 
-    local created_nodes, last_y_position = list.create(
-    "all_tasks",
-    parent_id,
-    template_id,
-    configs or {},  
-    fill_task,
-    {
-        start_y = adjusted_start_y, 
-        y_space = y_space
+    if layout then
+        -- Используем Druid Layout - создаём ноды и добавляем в layout
+        for i, task in ipairs(configs or {}) do
+            local nodes = gui.clone_tree(template_node)
+            local root = nodes[hash(template_id)]
+            gui.set_enabled(root, true)
+
+            -- Заполняем данными через fill_task
+            fill_task(nodes, task, i)
+
+            -- Добавляем в layout
+            layout:add(root)
+
+            table.insert(created_nodes, root)
+        end
+
+        if tasks_count > 0 then
+            content_height = tasks_count * element_height + (tasks_count - 1) * y_space
+        end
+    else
+        -- Старый режим с y_position
+        local adjusted_start_y = self.y_position - (element_height / 2)
+
+        created_nodes, last_y_position = list.create(
+            "all_tasks",
+            parent_id,
+            template_id,
+            configs or {},
+            fill_task,
+            {
+                start_y = adjusted_start_y,
+                y_space = y_space
+            }
+        )
+
+        if tasks_count > 0 then
+            content_height = tasks_count * element_height + (tasks_count - 1) * y_space
+        end
+
+        -- обновляем позицию y только в старом режиме
+        self.y_position = self.y_position - content_height
+    end
+
+    -- Проверить все таски на выполнение
+    tasks.check_to_complete()
+
+    -- Возвращаем информацию о созданном контенте
+    return {
+        nodes = created_nodes,
+        content_height = content_height,
+        tasks_count = tasks_count
     }
-)
-
--- Получаем размер созданного контента
-local tasks_count = #(configs or {})
-local content_height = 0
-if tasks_count > 0 then
-    -- Используем y_space из адаптера для согласованности с list.create()
-    content_height = tasks_count * element_height + (tasks_count - 1) * y_space
-end
-
--- Проверить все таски на выполнение
-tasks.check_to_complete()
-
--- обновляем позицию y
-self.y_position = self.y_position - content_height
-
--- Возвращаем информацию о созданном контенте
-return {
-    nodes = created_nodes,
-    content_height = content_height,
-    tasks_count = tasks_count,
-    last_y_position = last_y_position
-}
 end
 
 function tasks.is_completed(id)
