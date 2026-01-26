@@ -1,0 +1,55 @@
+local M = {}
+
+function M.get_commands(_opts)
+    return {
+        {
+            label = "Add Layout Code",
+            locations = { "Assets" },
+            query = {
+                selection = {
+                    type = "resource",
+                    cardinality = "one"
+                }
+            },
+            active = function(opts)
+                local selection = opts.selection
+                if not selection then return false end
+                local path = editor.get(selection, "path")
+                if not path then return false end
+                return string.match(path, "%.gui_script$") or string.match(path, "%.lua$")
+            end,
+            run = function(opts)
+                local selection = opts.selection
+                if not selection then return end
+
+                -- Get text, defaulting to empty string if fails
+                local existing_text = editor.get(selection, "text") or ""
+
+                local snippet = [[
+
+-- Layout injection
+local layout = require "druid.extended.layout"
+
+self.content_layout = self.druid:new(layout, "content", "vertical")
+self.content_layout:set_padding(0, 47, 0, 20)
+self.content_layout:set_margin(0, 20)
+
+self.content_layout:clear_layout()
+self.content_layout:add("node")
+self.content_layout:refresh_layout()
+]]
+
+                return {
+                    {
+                        action = "set",
+                        node_id = selection,
+                        property = "text",
+                        value = existing_text .. snippet
+                    }
+                }
+            end
+        }
+    }
+end
+
+return M
